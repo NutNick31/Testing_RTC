@@ -17,18 +17,21 @@ const selectors = [audioInputSelect, audioOutputSelect, videoSelect];
 audioOutputSelect.disabled = !("sinkId" in HTMLMediaElement.prototype);
 
 function gotDevices(deviceInfos) {
+  console.log(selectors[0]);
   // Handles being called several times to update labels. Preserve values.
-  const values = selectors.map((select) => select.value);
+  const values = selectors.map((select) => {console.log(select.value); select.value});
   selectors.forEach((select) => {
     while (select.firstChild) {
       select.removeChild(select.firstChild);
     }
   });
+  console.log("Device info : ", deviceInfos)  
+  // for (let i = 0 ; i < 1 ; ++i) {
   for (let i = 0; i !== deviceInfos.length; ++i) {
     const deviceInfo = deviceInfos[i];
     const option = document.createElement("option");
     option.value = deviceInfo.deviceId;
-    if (deviceInfo.kind === "audioinput") {
+    if (deviceInfo.kind === "audioinput" && deviceInfo.label === "Microphone Array (Intel® Smart Sound Technology (Intel® SST))") {
       option.text =
         deviceInfo.label || `microphone ${audioInputSelect.length + 1}`;
       audioInputSelect.appendChild(option);
@@ -36,14 +39,13 @@ function gotDevices(deviceInfos) {
       option.text =
         deviceInfo.label || `speaker ${audioOutputSelect.length + 1}`;
       audioOutputSelect.appendChild(option);
+    } else if (deviceInfo.kind === 'videoinput') {
+      option.text = deviceInfo.label || `camera ${videoSelect.length + 1}`;
+      videoSelect.appendChild(option);
     }
-    // } else if (deviceInfo.kind === 'videoinput') {
-    //   option.text = deviceInfo.label || `camera ${videoSelect.length + 1}`;
-    //   videoSelect.appendChild(option);
-    // }
-    // else {
-    //   console.log('Some other kind of source/device: ', deviceInfo);
-    // }
+    else {
+      console.log('Some other kind of source/device: ', deviceInfo);
+    }
   }
   selectors.forEach((select, selectorIndex) => {
     if (
@@ -60,22 +62,23 @@ navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError);
 
 // Attach audio output device to video element using device/sink ID.
 function attachSinkId(element, sinkId) {
-  if (typeof element.sinkId !== 'undefined') {
-    element.setSinkId(sinkId)
-        .then(() => {
-          console.log(`Success, audio output device attached: ${sinkId}`);
-        })
-        .catch(error => {
-          let errorMessage = error;
-          if (error.name === 'SecurityError') {
-            errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
-          }
-          console.error(errorMessage);
-          // Jump back to first output device in the list as it's the default.
-          audioOutputSelect.selectedIndex = 0;
-        });
+  if (typeof element.sinkId !== "undefined") {
+    element
+      .setSinkId(sinkId)
+      .then(() => {
+        console.log(`Success, audio output device attached: ${sinkId}`);
+      })
+      .catch((error) => {
+        let errorMessage = error;
+        if (error.name === "SecurityError") {
+          errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
+        }
+        console.error(errorMessage);
+        // Jump back to first output device in the list as it's the default.
+        audioOutputSelect.selectedIndex = 0;
+      });
   } else {
-    console.warn('Browser does not support output device selection.');
+    console.warn("Browser does not support output device selection.");
   }
 }
 
